@@ -106,7 +106,7 @@ local function definePile()
 
 				local path = fs.combine(module.filename, '..')
 
-				while #path > 0 then
+				while #path > 0 do
 					tryPath(fs.combine(fs.combine(path, '.pile'), name))
 
 					if found then return rtn end
