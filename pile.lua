@@ -135,7 +135,7 @@ local function definePile()
 		createModule = function(parent, file)
 			local module
 			module = {
-				id = file,
+				id = file:gsub('%.[^%.]+$', ''),
 				filename = file,
 				loaded = false,
 				parent = parent,
