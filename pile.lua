@@ -129,17 +129,7 @@ local function definePile()
 		end,
 
 		load = function(parent, file)
-			local module = internal.createModule(parent, file)
-
-			local ext = module.filename:match('%.(.+)$')
-
-			if pile.loaders[ext] == nil then
-				error('Unknown extension: ' .. ext)
-			else
-				pile.loaders[ext](module)
-			end
-
-			return module
+			return internal.loadModule(internal.createModule(parent, file))
 		end,
 
 		createModule = function(parent, file)
@@ -191,6 +181,14 @@ local function definePile()
 		end,
 
 		loadModule = function(module)
+			local ext = module.filename:match('%.([^%.]+)$')
+
+			if pile.loaders[ext] == nil then
+				error('Unknown extension: ' .. ext)
+			else
+				pile.loaders[ext](module)
+			end
+
 			return module
 		end
 	}
