@@ -39,17 +39,22 @@ local function definePile()
 			}
 
 			if sugar then
-				setmetatable(env, { __index = function(t, k)
-					if k == 'module' then
-						return module
-					elseif k == 'exports' then
-						return module.exports
-					elseif k == 'require' then
-						return module.require
-					else
-						return rawget(t, k)
-					end
-				end })
+				env.module = module
+				env.require = module.require
+				env.exports = module.exports
+
+				-- This doesn't work
+				-- setmetatable(env, { __index = function(t, k)
+				-- 	if k == 'module' then
+				-- 		return module
+				-- 	elseif k == 'exports' then
+				-- 		return module.exports
+				-- 	elseif k == 'require' then
+				-- 		return module.require
+				-- 	else
+				-- 		return rawget(t, k)
+				-- 	end
+				-- end })
 			end
 
 			setmetatable(env, { __index = _G })
