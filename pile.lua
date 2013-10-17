@@ -74,12 +74,16 @@ local function definePile()
 				if pile.cache[path] or (fs.exists(path) and path:find('%.[^%.]+$')) then -- Load the file if the name has an extension
 					rtn = path
 					found = true
+
+					return
 				end
 
 				for ext in pairs(pile.loaders) do
 					if pile.cache[path .. '.' .. ext] or fs.exists(path .. '.' .. ext) then
 						rtn = path .. '.' .. ext
 						found = true
+
+						return
 					end
 				end
 			end
