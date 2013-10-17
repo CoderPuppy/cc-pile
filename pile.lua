@@ -151,25 +151,37 @@ local function definePile()
 				parent = parent,
 				children = {},
 				exports = {},
-				require = function(name)
-					if name == 'require' then
-						return module.require
-					elseif name == 'module' then
-						return module
-					elseif name == 'exports' then
-						return module.exports
-					else
-						local required = internal.require(module, internal.resolve(module, name))
-
-						if required ~= nil then
-							return required.exports
-						end
-					end
-				end,
 				resolve = function(name)
 					return internal.resolve(module, name)
 				end
 			}
+
+			local function require(name)
+				if name == 'require' then
+					return module.require
+				elseif name == 'module' then
+					return module
+				elseif name == 'exports' then
+					return module.exports
+				else
+					local required = internal.require(module, internal.resolve(module, name))
+
+					if required ~= nil then
+						return required.exports
+					end
+				end
+			end
+
+			module.require = setmetatable({}, {
+				__call = function(t, ...) return require(...) end,
+				__index = function(t, k)
+					if k == 'paths' then return pile.paths
+					elseif k == 'cache' then return pile.cache
+					elseif k == 'loaders' then return pile.loaders
+					elseif k == 'resolve' then return module.resolve
+					else return rawget(t, k) end
+				end
+			})
 
 			if type(parent) == 'table' then
 				parent.children[#parent.children + 1] = module
