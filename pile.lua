@@ -66,7 +66,7 @@ local function definePile()
 			setfenv(fn, env)
 			fn(unpack(deps))
 
-			if module.autoExport --[[and type(module.exports) == 'table' and #module.exports == 0]] then
+			if module.autoExport and type(module.exports) == 'table' then
 				setmetatable(module.exports, { __index = env })
 			end
 		end,
