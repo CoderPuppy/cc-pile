@@ -71,7 +71,7 @@ local function definePile()
 			local rtn = nil
 
 			function tryPath(path)
-				if pile.cache[path] or (fs.exists(path) and path:find('%..+$')) then -- Load the file if the name has an extension
+				if pile.cache[path] or (fs.exists(path) and path:find('%.[^%.]+$')) then -- Load the file if the name has an extension
 					rtn = path
 					found = true
 				end
