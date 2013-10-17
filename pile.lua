@@ -53,7 +53,7 @@ internal = {
 		fn(unpack(deps))
 
 		if module.autoExport --[[and type(module.exports) == 'table' and #module.exports == 0]] then
-			module.exports = env
+			setmetatable(module.exports, { __index = env })
 		end
 	end,
 
@@ -62,21 +62,26 @@ internal = {
 		local rtn = nil
 
 		function tryPath(path)
-			if fs.exists(path) and name:find('%..+$') then -- Load the file if the name has an extension
+			if pile.cache[path] or (fs.exists(path) and name:find('%..+$')) then -- Load the file if the name has an extension
 				rtn = path
 				found = true
 			end
 
 			for ext in pairs(pile.loaders) do
-				if fs.exists(path .. '.' .. ext) then
+				if pile.cache[path .. '.' .. ext] or fs.exists(path .. '.' .. ext) then
 					rtn = path .. '.' .. ext
 					found = true
 				end
 			end
 		end
 
+		-- Try the plain path first
+		tryPath(name)
+
+		if found then return rtn end
+
 		if name[1] == '/' then -- Load from the root
-			tryPath('/' .. name)
+			tryPath(fs.combine('/', name))
 		elseif name:sub(1, 2) == './' then
 			tryPath(fs.combine(shell.dir(), name))
 
@@ -193,7 +198,7 @@ function pile.define(file, ...)
 end
 
 setmetatable(pile, {
-	__call = function(t, name) pile.require(name) end
+	__call = function(t, name) return pile.require(name) end
 })
 
 _G.pile = pile
