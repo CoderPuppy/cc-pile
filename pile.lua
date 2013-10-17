@@ -231,7 +231,7 @@ local function definePile()
 	end
 
 	setmetatable(pile, {
-		__call = function(t, name) return pile.require(name) end
+		__call = function(t, ...) return pile.require(...) end
 	})
 
 	_G.pile = pile
