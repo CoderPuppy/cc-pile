@@ -1,9 +1,9 @@
 --[=====[Pile of Packages by CoderPuppy]=====]
 -- Combined module loader and package manager
 
-local function definePile()
-	local pile = getfenv() -- For when loaded via os.loadAPI
-	if pile == _G or shell.getRunningProgram():sub(-8) == 'pile.lua' then pile = {} end -- Don't put stuff in the _G
+local function definePile(_G)
+	local pile = getfenv(2) -- For when loaded via os.loadAPI
+	if pile == _G then pile = {} end -- Don't put stuff in the _G
 
 	local internal
 	internal = {
@@ -259,11 +259,11 @@ local function definePile()
 end
 
 if _G.pile == nil then
-	definePile()
+	definePile(_G)
 end
 
 local tArgs = {...}
 
 if tArgs[1] == 'init' then
-	definePile()
+	definePile(_G)
 end
