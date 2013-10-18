@@ -69,6 +69,9 @@ local function definePile()
 			if module.autoExport and type(module.exports) == 'table' then
 				setmetatable(module.exports, { __index = env })
 			end
+
+			module.loaded = true
+			module.loading = false
 		end,
 
 		resolve = function(parent, name)
@@ -131,7 +134,8 @@ local function definePile()
 			if file == nil then return end -- Don't waste time with files that don't exist
 
 			if pile.cache[file] == nil then
-				pile.cache[file] = internal.load(parent, file) -- If it isn't loaded then LOAD IT!
+				pile.cache[file] = internal.createModule(parent, file)
+				internal.loadModule(pile.cache[file])
 			end
 
 			return pile.cache[file]
@@ -147,6 +151,7 @@ local function definePile()
 				id = file:gsub('%.[^%.]+$', ''),
 				filename = file,
 				loaded = false,
+				loading = false,
 				parent = parent,
 				children = {},
 				exports = {},
@@ -190,9 +195,18 @@ local function definePile()
 		end,
 
 		loadModule = function(module)
+			if module.loading then
+				print('Warning: ' .. module.id .. ' is already being loaded')
+				print('You probably have a circular dependency')
+				return module
+			end
+
+			module.loading = true
+
 			local ext = module.filename:match('%.([^%.]+)$')
 
 			if pile.loaders[ext] == nil then
+				module.loading = false
 				error('Unknown extension: ' .. ext)
 			else
 				pile.loaders[ext](module)
