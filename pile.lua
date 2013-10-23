@@ -269,6 +269,8 @@ local function definePile(_G)
 		end
 	}
 
+	pile.pile = pile
+
 	function pile.define(file, ...)
 		file = fs.combine(internal.root.filename, file)
 
