@@ -57,18 +57,26 @@ local function definePile(_G)
 				-- end })
 			end
 
-			setmetatable(env, { __index = _G })
+			setmetatable(env, {
+				__index = function(t, k)
+					if module.autoExports and module.exports[k] ~= nil then
+						return module.exports[k]
+					else
+						return _G[k]
+					end
+				end,
+				__newindex = function(t, k, v)
+					if module.autoExport then
+						module.exports[k] = v
+					end
+				end
+			})
 
-			env = setmetatable({}, { __index = env })
-
+			-- Is there any way i could autodetect when to turn this off
 			module.autoExport = true
 
 			setfenv(fn, env)
 			fn(unpack(deps))
-
-			if module.autoExport and type(module.exports) == 'table' then
-				setmetatable(module.exports, { __index = env })
-			end
 
 			module.loaded = true
 			module.loading = false
