@@ -161,7 +161,9 @@ local function definePile(_G)
 		end,
 
 		require = function(parent, file)
-			if file == nil then return end -- Don't waste time with files that don't exist
+			if file == nil then
+				error('No such file/module: ' .. file, 2)
+			end
 
 			if pile.cache[file] == nil then
 				pile.cache[file] = internal.createModule(parent, file)
@@ -172,6 +174,10 @@ local function definePile(_G)
 		end,
 
 		load = function(parent, file)
+			if file == nil then
+				error('No such file/module: ' .. file, 2)
+			end
+
 			return internal.loadModule(internal.createModule(parent, file))
 		end,
 
@@ -198,7 +204,11 @@ local function definePile(_G)
 				elseif name == 'exports' then
 					return module.exports
 				else
-					local required = internal.require(module, internal.resolve(module, name))
+					local file = internal.resolve(module, name)
+
+					if type(file) ~= 'string' then error('No such file/module: ' .. name, 3) end
+
+					local required = internal.require(module, file)
 
 					if required ~= nil then
 						return required.exports
