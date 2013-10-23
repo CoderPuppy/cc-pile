@@ -86,12 +86,12 @@ local function definePile(_G)
 			local found = false
 			local rtn = nil
 
-			function tryPath(path)
+			function resolveFile(path)
 				if pile.cache[path] or (fs.exists(path) and path:find('%.[^%.]+$')) then -- Load the file if the name has an extension
 					rtn = path
 					found = true
 
-					return
+					return true
 				end
 
 				for ext in pairs(pile.loaders) do
@@ -99,9 +99,29 @@ local function definePile(_G)
 						rtn = path .. '.' .. ext
 						found = true
 
-						return
+						return true
 					end
 				end
+			end
+
+			function resolveDir(path)
+				local packagePath = fs.combine(path, 'package.lson')
+				if fs.exists(packagePath) and not fs.isDir(packagePath) then
+					local f = fs.open(packagePath)
+
+					local package = textutils.unserialize(f.readAll())
+
+					f.close()
+
+					if type(package) == 'table' and type(package.main) == 'string' and resolveFile(fs.combine(path, package.main)) then return true end
+				end
+
+				if resolveFile(fs.combine(path, 'index')) then return true end
+			end
+
+			function tryPath(path)
+				if resolveFile(path) then return true end
+				if resolveDir(path) then return true end
 			end
 
 			-- Try the plain path first
@@ -117,6 +137,8 @@ local function definePile(_G)
 				if found then return rtn end
 
 				tryPath(fs.combine(fs.combine(parent.filename, '..'), name))
+			elseif name == '.' then
+				tryPath(shell.dir())
 			else
 				for i = 1, #pile.paths do
 					tryPath(fs.combine(pile.paths[i], name))
@@ -124,9 +146,9 @@ local function definePile(_G)
 					if found then return rtn end
 				end
 
-				local path = fs.combine(module.filename, '..')
+				local path = fs.combine(parent.filename, '..')
 
-				while #path > 0 do
+				while #path > 0 and path ~= '..' do
 					tryPath(fs.combine(fs.combine(path, '.pile'), name))
 
 					if found then return rtn end
