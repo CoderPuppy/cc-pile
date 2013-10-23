@@ -1,9 +1,9 @@
 --[=====[Pile of Packages by CoderPuppy]=====]
 -- Combined module loader and package manager
+-- Load it with shell.run
 
 local function definePile(_G)
-	local pile = getfenv(2) -- For when loaded via os.loadAPI
-	if pile == _G then pile = {} end -- Don't put stuff in the _G
+	local pile = {}
 
 	local internal
 	internal = {
