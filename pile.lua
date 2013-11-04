@@ -41,7 +41,7 @@ local function definePile(_G)
 			end
 
 			if type(fn) ~= 'function' then
-				error('No function passed to define(' .. module.id .. ')')
+				error('No function passed to define(' .. module.id .. ')', 2)
 			end
 
 			for i = 1, #deps do
