@@ -2,6 +2,20 @@
 -- Combined module loader and package manager
 -- Load it with shell.run
 
+local function reerror(err, level)
+	error(err:gsub('^pcall: ', ''), level + 1)
+end
+
+local function reerrorCall(level, fn, ...)
+	local ok, rtn = pcall(fn, ...)
+
+	if not ok then
+		reerror(rtn, level + 1)
+	end
+
+	return rtn
+end
+
 local function definePile(_G)
 	local pile = {}
 
@@ -76,10 +90,17 @@ local function definePile(_G)
 			module.autoExport = true
 
 			setfenv(fn, env)
-			fn(unpack(deps))
 
-			module.loaded = true
+
+			local ok, err = pcall(fn, unpack(deps))
+
 			module.loading = false
+
+			if ok then
+				module.loaded = true
+			else
+				reerror(err, 2)
+			end
 		end,
 
 		resolve = function(parent, name)
@@ -249,7 +270,7 @@ local function definePile(_G)
 				module.loading = false
 				error('Unknown extension: ' .. ext)
 			else
-				pile.loaders[ext](module)
+				reerrorCall(4, pile.loaders[ext], module)
 			end
 
 			return module
@@ -265,7 +286,12 @@ local function definePile(_G)
 	pile.resolve = internal.root.resolve
 	pile.loaders = { -- How to load a file
 		lua = function(module)
-			internal.define(module, true, {}, loadfile(module.filename))
+			local fn, err = loadfile(module.filename)
+			if type(fn) ~= 'function' then
+				module.loading = false
+				error(module.filename .. ': ' .. err)
+			end
+			reerrorCall(1, internal.define, module, true, {}, fn)
 		end
 	}
 
@@ -280,11 +306,7 @@ local function definePile(_G)
 
 		local module = internal.createModule(internal.root, file)
 
-		local ok, err = pcall(internal.define, module, ...)
-
-		if not ok then
-			error(err, 2)
-		end
+		reerrorCall(1, internal.define, module, ...)
 
 		pile.cache[module.id] = module
 
