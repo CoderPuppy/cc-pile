@@ -146,13 +146,13 @@ local function definePile(_G)
 			end
 
 			-- Try the plain path first
-			tryPath(name)
+			tryPath(fs.combine('/', name))
 
 			if found then return rtn end
 
 			if name[1] == '/' then -- Load from the root
 				tryPath(fs.combine('/', name))
-			elseif name:sub(1, 2) == './' then
+			elseif name:sub(1, 2) == './' or name:sub(1, 3) == '../' then
 				tryPath(fs.combine(shell.dir(), name))
 
 				if found then return rtn end
@@ -160,6 +160,16 @@ local function definePile(_G)
 				tryPath(fs.combine(fs.combine(parent.filename, '..'), name))
 			elseif name == '.' then
 				tryPath(shell.dir())
+
+				if found then return rtn end
+
+				tryPath(fs.combine(parent.filename, '..'))
+			elseif name == '..' then
+				tryPath(fs.combine(shell.dir(), '..'))
+
+				if found then return rtn end
+
+				tryPath(fs.combine(parent.filename, '../..'))
 			else
 				for i = 1, #pile.paths do
 					tryPath(fs.combine(pile.paths[i], name))
