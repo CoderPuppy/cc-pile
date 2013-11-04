@@ -72,17 +72,13 @@ local function definePile(_G)
 			end
 
 			setmetatable(env, {
-				__index = function(t, k)
-					if module.autoExports and module.exports[k] ~= nil then
-						return module.exports[k]
-					else
-						return _G[k]
-					end
-				end,
+				__index = _G,
 				__newindex = function(t, k, v)
 					if module.autoExport then
 						module.exports[k] = v
 					end
+
+					rawset(env, k, v)
 				end
 			})
 
