@@ -82,11 +82,12 @@ local function definePile(_G)
 				end
 			})
 
-			-- Is there any way i could autodetect when to turn this off
+			-- TODO: Is there any way i could autodetect when to turn this off
 			module.autoExport = true
 
 			setfenv(fn, env)
 
+			module.loading = true
 
 			local ok, err = pcall(fn, unpack(deps))
 
