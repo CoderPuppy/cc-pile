@@ -105,7 +105,7 @@ local function definePile(_G)
 			local rtn = nil
 
 			function resolveFile(path)
-				if pile.cache[path] or (fs.exists(path) and path:find('%.[^%.]+$')) then -- Load the file if the name has an extension
+				if pile.cache[path] or (fs.exists(path) and (not fs.isDir(path)) and path:find('%.[^%./]+$')) then -- Load the file if the name has an extension
 					rtn = path
 					found = true
 
@@ -144,48 +144,55 @@ local function definePile(_G)
 
 			-- Try the plain path first
 			tryPath(fs.combine('/', name))
-
 			if found then return rtn end
 
 			if name[1] == '/' then -- Load from the root
 				tryPath(fs.combine('/', name))
-			elseif name:sub(1, 2) == './' or name:sub(1, 3) == '../' then
-				tryPath(fs.combine(shell.dir(), name))
+				if found then return rtn end
+			end
 
+			if name:sub(1, 2) == './' or name:sub(1, 3) == '../' then
+				tryPath(fs.combine(shell.dir(), name))
 				if found then return rtn end
 
 				tryPath(fs.combine(fs.combine(parent.filename, '..'), name))
-			elseif name == '.' then
-				tryPath(shell.dir())
+				if found then return rtn end
+			end
 
+			if name == '.' then
+				tryPath(shell.dir())
 				if found then return rtn end
 
 				tryPath(fs.combine(parent.filename, '..'))
-			elseif name == '..' then
-				tryPath(fs.combine(shell.dir(), '..'))
+				if found then return rtn end
+			end
 
+			if name == '..' then
+				tryPath(fs.combine(shell.dir(), '..'))
 				if found then return rtn end
 
 				tryPath(fs.combine(parent.filename, '../..'))
-			else
-				for i = 1, #pile.paths do
-					tryPath(fs.combine(pile.paths[i], name))
-
-					if found then return rtn end
-				end
-
-				local path = fs.combine(parent.filename, '..')
-
-				while #path > 0 and path ~= '..' do
-					tryPath(fs.combine(fs.combine(path, '.pile'), name))
-
-					if found then return rtn end
-
-					path = fs.combine(path, '..')
-				end
+				if found then return rtn end
 			end
 
-			if found then return rtn end
+			for i = 1, #pile.paths do
+				tryPath(fs.combine(pile.paths[i], name))
+				if found then return rtn end
+			end
+
+			local path = fs.combine(parent.filename, '.')
+
+			if #path ~= 0 then
+				path = fs.combine(path, '..')
+			end
+
+			repeat
+				tryPath(fs.combine(fs.combine(path, '.pile'), name))
+
+				if found then return rtn end
+
+				path = fs.combine(path, '..')
+			until path:sub(1, 2) == '..'
 		end,
 
 		require = function(parent, file)
