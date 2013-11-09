@@ -3,14 +3,14 @@
 -- Load it with shell.run
 
 local function reerror(err, level)
-	error(err:gsub('^pcall: ', ''), level + 1)
+	error(err:gsub('^pcall: ', ''), level == 0 and 0 or level + 1)
 end
 
 local function reerrorCall(level, fn, ...)
 	local ok, rtn = pcall(fn, ...)
 
 	if not ok then
-		reerror(rtn, level + 1)
+		reerror(rtn, level == 0 and 0 or level + 1)
 	end
 
 	return rtn
@@ -89,14 +89,14 @@ local function definePile(_G)
 
 			module.loading = true
 
-			local ok, err = pcall(fn, unpack(deps))
+			local ok, err = pcall(function() return fn(unpack(deps)) end)
 
 			module.loading = false
 
 			if ok then
 				module.loaded = true
 			else
-				reerror(err, 2)
+				reerror(module.filename .. ': ' .. err:gsub('^pcall: ', ''), 2)
 			end
 		end,
 
@@ -195,7 +195,7 @@ local function definePile(_G)
 
 			if pile.cache[file] == nil then
 				pile.cache[file] = internal.createModule(parent, file)
-				internal.loadModule(pile.cache[file])
+				reerrorCall(3, internal.loadModule, pile.cache[file])
 			end
 
 			return pile.cache[file]
@@ -269,15 +269,13 @@ local function definePile(_G)
 				return module
 			end
 
-			module.loading = true
-
 			local ext = module.filename:match('%.([^%.]+)$')
 
 			if pile.loaders[ext] == nil then
 				module.loading = false
 				error('Unknown extension: ' .. ext)
 			else
-				reerrorCall(4, pile.loaders[ext], module)
+				reerrorCall(0, pile.loaders[ext], module)
 			end
 
 			return module
@@ -296,9 +294,9 @@ local function definePile(_G)
 			local fn, err = loadfile(module.filename)
 			if type(fn) ~= 'function' then
 				module.loading = false
-				error(module.filename .. ': ' .. err)
+				error(err)
 			end
-			reerrorCall(1, internal.define, module, true, {}, fn)
+			reerrorCall(0, internal.define, module, true, {}, fn)
 		end
 	}
 
