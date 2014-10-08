@@ -1,6 +1,7 @@
 --[=====[Pile of Packages by CoderPuppy]=====]
--- Combined module loader and package manager
--- Load it with shell.run
+-- Module System
+-- Load it with shell.run('pile.lua')
+-- Reload it with shell.run('pile.lua init')
 
 local function reerror(err, level)
 	error(err:gsub('^pcall: ', ''), level == 0 and 0 or level + 1)
@@ -123,11 +124,11 @@ local function definePile(_G)
 			end
 
 			function resolveDir(path)
-				local packagePath = fs.combine(path, 'package.lson')
+				local packagePath = fs.combine(path, 'pile-package.lua')
 				if fs.exists(packagePath) and not fs.isDir(packagePath) then
-					local f = fs.open(packagePath)
+					local f = fs.open(packagePath, 'r')
 
-					local package = textutils.unserialize(f.readAll())
+					local package = pile.parsePackage(f.readAll())
 
 					f.close()
 
@@ -192,7 +193,7 @@ local function definePile(_G)
 				if found then return rtn end
 
 				path = fs.combine(path, '..')
-			until path:sub(1, 2) == '..'
+			until path --[[:sub(1, 2)]] == '..'
 		end,
 
 		require = function(parent, file)
@@ -292,6 +293,8 @@ local function definePile(_G)
 	internal.root = internal.createModule(nil, '/')
 	internal.root.id = 'root'
 
+	pile.internal = internal
+
 	pile.cache = {} -- Modules that are already loaded
 	pile.paths = {} -- Where to look for modules
 	pile.require = internal.root.require
@@ -338,8 +341,35 @@ if _G.pile == nil then
 	definePile(_G)
 end
 
-local tArgs = {...}
+local args = {}
 
-if tArgs[1] == 'init' then
+for i, arg in ipairs({...}) do
+	if arg:sub(1, 2) == '--' then
+		local arg = arg:sub(3)
+		local match = {arg:match('^([^=]+)=(.*)$')}
+		if match then
+			local name = match[1]
+			local val = match[2]
+			args[name] = val
+		elseif arg:sub(1, 3) == 'no-' then
+			args[arg:sub(4)] = false
+		else
+			args[arg] = true
+		end
+	elseif arg:sub(1, 1) == '-' then
+		for flag in arg:sub(2):gmatch('.') do
+			args[flag] = true
+		end
+	else
+		args[#args + 1] = arg
+	end
+end
+
+if args[1] == 'init' then
 	definePile(_G)
+elseif args[1] == 'install' or args[1] == 'i' then
+	local pkgs = {}
+	for i, arg in ipairs(args) do
+
+	end
 end
